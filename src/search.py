@@ -58,7 +58,7 @@ def bfs_search(graph: Graph):
         # Sort neighbours in ascending order
         sorted_neighbours = sorted(neighbours, key=lambda x: x[0])
 
-        # Loop through reversed list cause FIFO
+        # Loop through normal list cause FIFO
         for neighbour_id, edge_cost in sorted_neighbours:
                 if neighbour_id not in visited:
                     visited.add(neighbour_id)

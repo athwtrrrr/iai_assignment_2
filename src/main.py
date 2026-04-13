@@ -23,7 +23,7 @@ def main():
     elif method == "BFS":
         goal, nodes_created, path = bfs_search(graph)
     else:
-        print(f"Error: Method '{method}' not supported yet. Only DFS and BFS are implemented.")
+        print(f"Error: Method '{method}' not supported yet.")
         sys.exit(1)
 
     if goal is None:
