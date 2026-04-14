@@ -63,6 +63,8 @@ def bfs_search(graph: Graph):
                     new_path = path + [neighbour_id] 
                     nodes_created += 1
                     frontier.push((neighbour_id, new_path))
+                    
+    return None, nodes_created, None
 
 # Đường chim bay
 def heuristic(node_id: int, graph: Graph) -> float:
