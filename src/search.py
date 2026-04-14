@@ -74,22 +74,44 @@ def heuristic(node_id: int, graph: Graph) -> float:
 # f = g + h
 def a_star_search(graph: Graph):
     frontier = Frontier('priority')
-    frontier.push((heuristic(graph.origin, graph), graph.origin, [graph.origin], 0.0))
-    explored = set()
+    frontier.push((heuristic(graph.origin, graph), graph.origin, [graph.origin], 0.0)) #(f-value, start node, path, g cost)
     nodes_created = 1
 
+    # Dictionary to store the best known g-cost to reach each node. Acts as a "closed list" that can be re-opened
+    g_costs = {graph.origin: 0.0}
+
     while not frontier.is_empty():
-        _, node_id, path, g_cost = frontier.pop()
+        _, node_id, path, g_cost = frontier.pop() # Pop the smallest f value
         if node_id in graph.destinations:
             return node_id, nodes_created, path
-            
-        if node_id not in explored:
-            explored.add(node_id)
-            for n_id, cost in graph.adj.get(node_id, []):
-                if n_id not in explored:
-                    nodes_created += 1
-                    new_g = g_cost + cost
-                    frontier.push((new_g + heuristic(n_id, graph), n_id, path + [n_id], new_g))
+        
+        # If this entry's g-cost is worse than the best known cost for this node, skip it
+        if g_cost > g_costs.get(node_id, float('inf')):
+            continue
+
+        if node_id in graph.destinations:
+            return node_id, nodes_created, path
+        
+        # Generate all neighbors of the current node.
+        for n_id, cost in graph.adj.get(node_id, []):
+            # Calculate the total cost to reach this neighbor via the current path.
+            new_g = g_cost + cost
+
+            # If this neighbor has never been visited, OR we have found a cheaper path to it, update its g-cost and push it.
+            if n_id not in g_costs or new_g < g_costs[n_id]:
+                # Record the new best cost.
+                g_costs[n_id] = new_g
+
+                # Increment the node counter because we are creating a new search node.
+                nodes_created += 1
+
+                # Push the neighbor onto the frontier with its new f-value.
+                frontier.push((
+                    new_g + heuristic(n_id, graph),   # f(n) = g(n) + h(n)
+                    n_id,                             # node ID
+                    path + [n_id],                    # updated path
+                    new_g                             # accumulated g-cost
+                ))
                     
     return None, nodes_created, None
 
