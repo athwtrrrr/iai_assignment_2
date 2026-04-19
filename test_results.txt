@@ -218,6 +218,31 @@ Test File: linear_chain.txt
 1 -> 2 -> 3 -> 4*
 
 ============================================================
+Test File: multi_goal_optimal_order.txt
+============================================================
+ test_cases/multi_goal_optimal_order.txt DFS
+2 3
+1 -> 2
+ test_cases/multi_goal_optimal_order.txt BFS
+2 3
+1 -> 2
+ test_cases/multi_goal_optimal_order.txt GBFS
+2 3
+1 -> 2
+ test_cases/multi_goal_optimal_order.txt AS
+3 3
+1 -> 3
+ test_cases/multi_goal_optimal_order.txt UCS
+3 3
+1 -> 3
+ test_cases/multi_goal_optimal_order.txt IDA
+3 3
+1 -> 3
+ test_cases/multi_goal_optimal_order.txt MULTI
+4 6
+1 -> 3* -> 2* -> 4*
+
+============================================================
 Test File: multiple_destinations_ordered.txt
 ============================================================
  test_cases/multiple_destinations_ordered.txt DFS
