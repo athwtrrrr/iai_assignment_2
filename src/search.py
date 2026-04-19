@@ -46,7 +46,7 @@ def bfs_search(graph: Graph):
     while not frontier.is_empty():
         node_id, path = frontier.pop()
 
-    # If node is destination return node
+        # If node is destination return node
         if node_id in graph.destinations:
             return node_id, nodes_created, path
 
@@ -90,9 +90,6 @@ def a_star_search(graph: Graph):
         # If this entry's g-cost is worse than the best known cost for this node, skip it
         if g_cost > g_costs.get(node_id, float('inf')):
             continue
-
-        if node_id in graph.destinations:
-            return node_id, nodes_created, path
         
         # Generate all neighbors of the current node.
         for n_id, cost in graph.adj.get(node_id, []):
@@ -159,33 +156,49 @@ def ucs_search(graph: Graph):
                     
     return None, nodes_created, None
 
-# = BFS + DFS; chạy DFS lặp lại với giới hạn độ sâu tăng dần từ 0,1,2,... => save dung lượng như DFS nhưng vẫn đảm bảo tối ưu số bước như BFS.
-def ids_search(graph: Graph): 
-    def dls(node_id, limit, path, current_visited):
+def ida_star_search(graph: Graph):
+    # Khởi tạo giới hạn ban đầu là h(origin)
+    bound = heuristic(graph.origin, graph)
+    nodes_created = 1
+
+    def search(node_id, g_cost, current_bound, current_visited, current_path):
         nonlocal nodes_created
-        if node_id in graph.destinations:
-            return node_id, path
-        if limit == 0:
-            return None, None
+        f_cost = g_cost + heuristic(node_id, graph)
+        
+        # Nếu f_cost vượt giới hạn hiện tại, trả về f_cost này để làm giới hạn cho vòng sau
+        if f_cost > current_bound:
+            return f_cost, None, None
             
-        for n_id, _ in sorted(graph.adj.get(node_id, []), key=lambda x: x[0]):
+        if node_id in graph.destinations:
+            return "FOUND", node_id, current_path
+
+        min_bound = float('inf')
+        
+        # Lấy và sắp xếp các đỉnh kề (Tie-breaking: ID nhỏ hơn duyệt trước)
+        neighbours = graph.adj.get(node_id, [])
+        for n_id, edge_cost in sorted(neighbours, key=lambda x: x[0]):
             if n_id not in current_visited:
                 current_visited.add(n_id)
                 nodes_created += 1
-                res_id, res_path = dls(n_id, limit - 1, path + [n_id], current_visited)
-                if res_id is not None:
-                    return res_id, res_path
+                
+                # Gọi đệ quy xuống nhánh sâu hơn
+                res_bound, res_id, res_path = search(n_id, g_cost + edge_cost, current_bound, current_visited, current_path + [n_id])
+                
+                if res_bound == "FOUND":
+                    return "FOUND", res_id, res_path
+                if res_bound < min_bound:
+                    min_bound = res_bound
+                    
+                # Backtrack: Xóa node khỏi path hiện tại để cho phép các nhánh khác đi qua
                 current_visited.remove(n_id)
-        return None, None
+                
+        return min_bound, None, None
 
-    nodes_created = 1
-    depth_limit = 0
-    max_depth = len(graph.nodes) * 2 
-    
-    while depth_limit <= max_depth:
-        goal_id, path = dls(graph.origin, depth_limit, [graph.origin], {graph.origin})
-        if goal_id is not None:
-            return goal_id, nodes_created, path
-        depth_limit += 1
-
-    return None, nodes_created, None
+    # Vòng lặp tăng dần giới hạn (Iterative Deepening)
+    while True:
+        res_bound, goal_id, goal_path = search(graph.origin, 0.0, bound, {graph.origin}, [graph.origin])
+        if res_bound == "FOUND":
+            return goal_id, nodes_created, goal_path
+        if res_bound == float('inf'): # Không thể đi tới đích
+            return None, nodes_created, None
+        bound = res_bound # Cập nhật giới hạn mới cho vòng lặp tiếp theo
