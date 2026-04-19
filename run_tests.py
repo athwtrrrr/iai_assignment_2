@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Configuration
 TEST_DIR = "test_cases"          # Folder containing .txt test files
-METHODS = ["DFS", "BFS", "GBFS", "A*", "UCS", "IDS"]
+METHODS = ["DFS", "BFS", "GBFS", "AS", "UCS", "IDA", "MULTI"]
 OUTPUT_FILE = "test_results.txt" # Where to save results
 
 def run_all_tests():
@@ -26,7 +26,7 @@ def run_all_tests():
                 result = subprocess.run(cmd, capture_output=True, text=True)
 
                 # Write the standard output
-                out.write(f"{method:4}: {result.stdout.strip()}\n")
+                out.write(f" {result.stdout.strip()}\n")
                 # If there was an error, write it as well
                 if result.stderr:
                     out.write(f"      ERR: {result.stderr.strip()}\n")

@@ -40,7 +40,6 @@ def main():
         print(f"{filename} {method}")
         print("No path found.")
     else:
-        # For MULTI, annotate path with *
         if method == "MULTI":
             print(f"{filename} {method}")
             print(f"{goal} {nodes_created}")
