@@ -1,12 +1,14 @@
-# Data files
-data/raw/
-data/*.csv
-data/*.ods
+# 2B data files
+2B/data/raw/
+2B/data/*.csv
+2B/data/*.ods
 
-# Model weights
-models/*.pth
+# 2B model weights
+2B/models/*.pth
 
-# Python cache
+# General
 __pycache__/
 *.pyc
 .DS_Store
+*.xls
+*.xlsx
