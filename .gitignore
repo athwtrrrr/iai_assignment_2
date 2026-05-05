@@ -1,0 +1,12 @@
+# Data files
+data/raw/
+data/*.csv
+data/*.ods
+
+# Model weights
+models/*.pth
+
+# Python cache
+__pycache__/
+*.pyc
+.DS_Store
