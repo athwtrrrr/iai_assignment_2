@@ -83,20 +83,13 @@ def build_long_format(df):
 # Merge coords, add time features
 # ─────────────────────────────────────────────
 def enrich_and_clean(df_long, site_info):
-
-    # Merge lat,long 
     df = df_long.merge(site_info[["scats_id", "lat", "lon", "location"]], on="scats_id", how="left")
 
-    # Extract hour from timestamp
     df["hour_of_day"] = df["timestamp"].dt.hour
-    # Extract day of week as an integer
     df["day_of_week"] = df["timestamp"].dt.dayofweek
     df["is_weekend"]  = df["day_of_week"] >= 5
 
-    # Hourly aggregation (sum 4 x 15-min slots)
     df["hour_bucket"] = df["timestamp"].dt.floor("h")
-
-    # Groups every 4 rows that share the same site and hour bucket
     df_hourly = (
         df.groupby(["scats_id", "hour_bucket", "lat", "lon", "location"], as_index=False)
         .agg(flow_hourly=("flow_15min", "sum"),
@@ -106,22 +99,31 @@ def enrich_and_clean(df_long, site_info):
     )
     df_hourly["hour_of_day"] = df_hourly["timestamp"].dt.hour
 
-    return df, df_hourly
+    
+    df = df.drop(columns=["hour_bucket"])
 
+    return df, df_hourly
 
 # ─────────────────────────────────────────────
 # STEP 5: Train / test split
 # ─────────────────────────────────────────────
-SPLIT_DATE = "2006-10-22"  # Oct 1-21 = train (3 weeks), Oct 22-31 = test (10 days)
+TRAIN_END = "2006-10-22"   # Oct 1-21  = train (21 days, 70%)
+VAL_END   = "2006-10-27"   # Oct 22-26 = val   (5 days,  16%)
+                            # Oct 27-31 = test  (5 days,  16%)
 
 def split_data(df, timestamp_col="timestamp"):
-    split = pd.Timestamp(SPLIT_DATE)
-    train = df[df[timestamp_col] < split].copy()
-    test  = df[df[timestamp_col] >= split].copy()
-    print(f"  Train: {len(train)} rows ({train[timestamp_col].min().date()} to {train[timestamp_col].max().date()})")
-    print(f"  Test:  {len(test)} rows ({test[timestamp_col].min().date()} to {test[timestamp_col].max().date()})")
-    return train, test
+    train_end = pd.Timestamp(TRAIN_END)
+    val_end   = pd.Timestamp(VAL_END)
 
+    train = df[df[timestamp_col] <  train_end].copy()
+    val   = df[(df[timestamp_col] >= train_end) & (df[timestamp_col] < val_end)].copy()
+    test  = df[df[timestamp_col] >= val_end].copy()
+
+    print(f"  Train: {len(train):,} rows ({train[timestamp_col].min().date()} to {train[timestamp_col].max().date()})")
+    print(f"  Val:   {len(val):,} rows ({val[timestamp_col].min().date()} to {val[timestamp_col].max().date()})")
+    print(f"  Test:  {len(test):,} rows ({test[timestamp_col].min().date()} to {test[timestamp_col].max().date()})")
+
+    return train, val, test
 
 # ─────────────────────────────────────────────
 # MAIN
@@ -130,33 +132,37 @@ if __name__ == "__main__":
     os.makedirs("data/raw", exist_ok=True)
     os.makedirs("data", exist_ok=True)
 
-    df_raw      = load_raw_data(XLS_PATH)
-    site_info   = extract_site_info(df_raw)
-    df_long     = build_long_format(df_raw)
+    df_raw              = load_raw_data(XLS_PATH)
+    site_info           = extract_site_info(df_raw)
+    df_long             = build_long_format(df_raw)
     df_clean, df_hourly = enrich_and_clean(df_long, site_info)
 
     print("\nSplitting 15-min data...")
-    train_15, test_15 = split_data(df_clean, "timestamp")
+    train_15, val_15, test_15 = split_data(df_clean, "timestamp")
 
     print("\nSplitting hourly data...")
-    train_h, test_h = split_data(df_hourly, "timestamp")
+    train_h, val_h, test_h = split_data(df_hourly, "timestamp")
 
     # Save all outputs
-    site_info.to_csv("data/site_info.csv", index=False)
-    df_clean.to_csv("data/scats_clean.csv", index=False)
-    df_hourly.to_csv("data/scats_hourly.csv", index=False)
-    train_15.to_csv("data/train.csv", index=False)
-    test_15.to_csv("data/test.csv", index=False)
-    train_h.to_csv("data/train_hourly.csv", index=False)
-    test_h.to_csv("data/test_hourly.csv", index=False)
+    site_info.to_csv( "data/site_info.csv",       index=False)
+    df_clean.to_csv(  "data/scats_clean.csv",      index=False)
+    df_hourly.to_csv( "data/scats_hourly.csv",     index=False)
+    train_15.to_csv(  "data/train.csv",            index=False)
+    val_15.to_csv(    "data/val.csv",              index=False)
+    test_15.to_csv(   "data/test.csv",             index=False)
+    train_h.to_csv(   "data/train_hourly.csv",     index=False)
+    val_h.to_csv(     "data/val_hourly.csv",       index=False)
+    test_h.to_csv(    "data/test_hourly.csv",      index=False)
 
     print(f"""
 Files saved to data/
-  site_info.csv    - {len(site_info)} sites with coordinates
-  scats_clean.csv  - {len(df_clean)} rows (15-min, all sites)
-  scats_hourly.csv - {len(df_hourly)} rows (hourly, all sites)
-  train_hourly.csv - {len(train_h)} rows (Oct 1-21, hourly)
-  test_hourly.csv  - {len(test_h)} rows (Oct 22-31, hourly)
-  train.csv        - {len(train_15)} rows (Oct 1-21)
-  test.csv         - {len(test_15)} rows (Oct 22-31)
+  site_info.csv       - {len(site_info)} sites with coordinates
+  scats_clean.csv     - {len(df_clean):,} rows (15-min, all sites)
+  scats_hourly.csv    - {len(df_hourly):,} rows (hourly, all sites)
+  train.csv           - {len(train_15):,} rows (Oct 1-21)
+  val.csv             - {len(val_15):,} rows (Oct 22-26)
+  test.csv            - {len(test_15):,} rows (Oct 27-31)
+  train_hourly.csv    - {len(train_h):,} rows (Oct 1-21, hourly)
+  val_hourly.csv      - {len(val_h):,} rows (Oct 22-26, hourly)
+  test_hourly.csv     - {len(test_h):,} rows (Oct 27-31, hourly)
     """)
