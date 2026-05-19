@@ -49,9 +49,14 @@ def _get_scaler():
     """
     global _scaler
     if _scaler is None:
-        train = pd.read_csv("data/train.csv")
-        _scaler = MinMaxScaler(feature_range=(0, 1))
-        _scaler.fit(train[["flow_15min"]])
+        import joblib
+        scaler_path = "models/scaler.pkl"
+        if os.path.exists(scaler_path):
+            _scaler = joblib.load(scaler_path)
+        else:
+            train = pd.read_csv("data/train.csv")
+            _scaler = MinMaxScaler(feature_range=(0, 1))
+            _scaler.fit(train[["flow_15min"]])
     return _scaler
 
 

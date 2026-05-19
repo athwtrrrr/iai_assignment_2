@@ -50,6 +50,11 @@ def normalise(train, val, test):
     test["flow_scaled"]  = scaler.transform(test[["flow_15min"]])
 
     print(f"Scaled range — min: {train['flow_scaled'].min():.2f}  max: {train['flow_scaled'].max():.2f}")
+    
+    import joblib
+    os.makedirs("models", exist_ok=True)
+    joblib.dump(scaler, "models/scaler.pkl")
+
     return train, val, test, scaler
 # ─────────────────────────────────────────────
 # STEP 3: Build sliding windows

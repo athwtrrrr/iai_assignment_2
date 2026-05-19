@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-cd iai_assignment_2
+ccdd iai_assignment_2
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r 2B/requirements.txt
