@@ -1,0 +1,21 @@
+# TBRGS default configuration (Boroondara)
+defaults:
+  origin: 2000
+  destination: 3002
+  timestamp: "2006-10-27 08:00"
+  model: lstm
+  top_k: 5
+  max_edge_km: 2.0
+  speed_limit_kmh: 60
+  intersection_delay_sec: 30
+
+paths:
+  data_dir: src/data
+  models_dir: src/models
+  site_info: src/data/site_info.csv
+
+training:
+  lags: 12
+  hidden_size: 64
+  epochs: 100
+  batch_size: 32

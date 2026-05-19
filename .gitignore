@@ -1,10 +1,9 @@
-# 2B data files
-2B/data/raw/
-2B/data/*.csv
-2B/data/*.ods
+# 2B raw uploads (processed CSVs in src/data are tracked)
+2B/src/data/raw/*.xls
+2B/src/data/raw/*.csv
 
-# 2B model weights
-2B/models/*.pth
+# Virtual environment
+.venv/
 
 # General
 __pycache__/
