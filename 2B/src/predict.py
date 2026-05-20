@@ -4,16 +4,15 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 from lstm import LSTMModel
-from gru  import GRUModel
+from gru import GRUModel
+from cnn import CNNModel
 
 
-# ─────────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────────
-LAGS       = 12
+LAGS = 12
 MODEL_PATHS = {
-    "lstm"  : "models/lstm_best.pth",
-    "gru"   : "models/gru_best.pth",
+    "lstm": "models/lstm_best.pth",
+    "gru": "models/gru_best.pth",
+    "cnn": "models/cnn_best.pth",
 }
 
 # ─────────────────────────────────────────────
@@ -50,9 +49,14 @@ def _get_scaler():
     """
     global _scaler
     if _scaler is None:
-        train = pd.read_csv("data/train.csv")
-        _scaler = MinMaxScaler(feature_range=(0, 1))
-        _scaler.fit(train[["flow_15min"]])
+        import joblib
+        scaler_path = "models/scaler.pkl"
+        if os.path.exists(scaler_path):
+            _scaler = joblib.load(scaler_path)
+        else:
+            train = pd.read_csv("data/train.csv")
+            _scaler = MinMaxScaler(feature_range=(0, 1))
+            _scaler.fit(train[["flow_15min"]])
     return _scaler
 
 
@@ -66,14 +70,12 @@ def _get_model(model_name):
     Load and cache model. Only loads from disk once per model type.
     """
     if model_name not in _models:
-        if model_name == "lstm":
-            m = LSTMModel()
-        elif model_name == "gru":
-            m = GRUModel()
-        else:
-            raise ValueError(f"Unknown model: {model_name}. Choose 'lstm' or 'gru'.")
+        factories = {"lstm": LSTMModel, "gru": GRUModel, "cnn": CNNModel}
+        if model_name not in factories:
+            raise ValueError(f"Unknown model: {model_name}. Choose lstm, gru, or cnn.")
+        m = factories[model_name]()
 
-        m.load_state_dict(torch.load(MODEL_PATHS[model_name]))
+        m.load_state_dict(torch.load(MODEL_PATHS[model_name], weights_only=True))
         m.eval()
         _models[model_name] = m
 
@@ -90,7 +92,7 @@ def predict_flow(site_id, timestamp, model="lstm"):
     Arguments:
         site_id   : int or str  — SCATS site number e.g. 2000
         timestamp : str or datetime — e.g. "2006-10-15 08:00"
-        model     : str — "lstm", "gru", or "third"
+        model     : str — "lstm", "gru", or "cnn"
 
     Returns:
         float — predicted flow in vehicles per 15 minutes

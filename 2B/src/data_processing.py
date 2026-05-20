@@ -6,7 +6,7 @@ import numpy as np
 # ─────────────────────────────────────────────
 # Load raw data 
 # ─────────────────────────────────────────────
-XLS_PATH = "data/raw/Scats_Data_October_2006.xls"
+XLS_PATH = "data/raw/Scats Data October 2006.xls"
 
 def load_raw_data(xls_path):
 

@@ -1,0 +1,10 @@
+{
+  "speed_limit_kmh": 60,
+  "intersection_delay_s": 30,
+  "max_routes": 5,
+  "default_model": "lstm",
+  "max_edge_distance_km": 2.0,
+  "default_timestamp": "2006-10-27 08:00",
+  "default_origin": 2000,
+  "default_destination": 3002
+}
