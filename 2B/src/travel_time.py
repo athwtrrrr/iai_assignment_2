@@ -9,24 +9,14 @@ A = -CAPACITY_FLOW / (CAPACITY_SPEED ** 2)
 B = -2 * CAPACITY_SPEED * A                  
 
 def flow_to_speed(flow_per_hour):
-
-    # Formula to calculate delta
     delta = B**2 - 4 * A * flow_per_hour
-
     if delta < 0:
-        # No valid value floor at 1 to avoid division by zero
         return 1.0
-
     sqrt_delta = sqrt(delta)
-
     if flow_per_hour <= CAPACITY_FLOW:
-        # Under capacity — green line — higher speed root
-        speed = (-B + sqrt_delta) / (2 * A)
+        speed = (B - sqrt_delta) / (-2 * A)   # green line
     else:
-        # Over capacity — red line — lower speed root
-        speed = (-B - sqrt_delta) / (2 * A)
-
-    # Cap at speed limit, floor at 1 to avoid division by zero
+        speed = (B + sqrt_delta) / (-2 * A)   # red line
     return max(1.0, min(speed, SPEED_LIMIT))
 
 def travel_time(flow_per_hour, distance_km):

@@ -147,7 +147,7 @@ def predict_flow(site_id, timestamp, model="lstm"):
 if __name__ == "__main__":
     # Quick test — predict flow for site 2000 at 8am on Oct 27
     flow = predict_flow(
-        site_id   = 3812,
+        site_id   = 2000,
         timestamp = "2006-10-26 01:00",
         model     = "lstm"
     )
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
     # Test GRU too
     flow_gru = predict_flow(
-        site_id   = 3812,
+        site_id   = 2000,
         timestamp = "2006-10-26 01:00",
         model     = "gru"
     )
