@@ -146,23 +146,15 @@ if __name__ == "__main__":
     # Save all outputs
     site_info.to_csv( "data/site_info.csv",       index=False)
     df_clean.to_csv(  "data/scats_clean.csv",      index=False)
-    df_hourly.to_csv( "data/scats_hourly.csv",     index=False)
     train_15.to_csv(  "data/train.csv",            index=False)
     val_15.to_csv(    "data/val.csv",              index=False)
     test_15.to_csv(   "data/test.csv",             index=False)
-    train_h.to_csv(   "data/train_hourly.csv",     index=False)
-    val_h.to_csv(     "data/val_hourly.csv",       index=False)
-    test_h.to_csv(    "data/test_hourly.csv",      index=False)
 
     print(f"""
 Files saved to data/
   site_info.csv       - {len(site_info)} sites with coordinates
   scats_clean.csv     - {len(df_clean):,} rows (15-min, all sites)
-  scats_hourly.csv    - {len(df_hourly):,} rows (hourly, all sites)
   train.csv           - {len(train_15):,} rows (Oct 1-21)
   val.csv             - {len(val_15):,} rows (Oct 22-26)
   test.csv            - {len(test_15):,} rows (Oct 27-31)
-  train_hourly.csv    - {len(train_h):,} rows (Oct 1-21, hourly)
-  val_hourly.csv      - {len(val_h):,} rows (Oct 22-26, hourly)
-  test_hourly.csv     - {len(test_h):,} rows (Oct 27-31, hourly)
     """)
