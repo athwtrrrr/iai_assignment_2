@@ -464,10 +464,10 @@ if __name__ == "__main__":
         all_metrics.append(metrics)
 
         # Plots
-        plot_predictions(site_id, test_site, preds_real, y_test_real)
+        plot_predictions(site_id, test_site, preds_real, y_test_real, save_dir="plots/transformer")
         loss_csv = f"models/transformer_site_{site_id}_losses.csv"
         if os.path.exists(loss_csv):
-            plot_loss_curve(site_id, loss_csv)
+            plot_loss_curve(site_id, loss_csv, save_dir="plots/transformer")
 
     # Summary
     if all_metrics:

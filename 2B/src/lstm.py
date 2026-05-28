@@ -216,7 +216,7 @@ def plot_predictions(site_id, test_site, preds_real, y_test_real, lags=LAGS, sav
     plt.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(f"{save_dir}/site_{site_id}_timeseries.png", dpi=150)
+    plt.savefig(f"{save_dir}/lstm_site_{site_id}_timeseries.png", dpi=150)
     plt.close()
 
     # Scatter plot with perfect fit line
@@ -231,7 +231,7 @@ def plot_predictions(site_id, test_site, preds_real, y_test_real, lags=LAGS, sav
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f"{save_dir}/site_{site_id}_scatter.png", dpi=150)
+    plt.savefig(f"{save_dir}/lstm_site_{site_id}_scatter.png", dpi=150)
     plt.close()
 
     print(f"  Plots saved for site {site_id} in '{save_dir}'")
@@ -250,7 +250,7 @@ def plot_loss_curve(site_id, loss_csv_path, save_dir="plots"):
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f"{save_dir}/site_{site_id}_loss_curve.png", dpi=150)
+    plt.savefig(f"{save_dir}/lstm_site_{site_id}_loss_curve.png", dpi=150)
     plt.close()
 
 # ─────────────────────────────────────────────
@@ -292,12 +292,12 @@ if __name__ == "__main__":
         all_metrics.append(metrics)
 
         # Plot predictions
-        plot_predictions(site_id, test_site, preds_real, y_test_real, lags=LAGS)
+        plot_predictions(site_id, test_site, preds_real, y_test_real, lags=LAGS, save_dir="plots/lstm")
 
         # Plot loss curve (optional)
         loss_csv = f"models/lstm_site_{site_id}_losses.csv"
         if os.path.exists(loss_csv):
-            plot_loss_curve(site_id, loss_csv)
+            plot_loss_curve(site_id, loss_csv, save_dir="plots/lstm")
 
     # Save summary CSV
     if all_metrics:
