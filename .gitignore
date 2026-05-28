@@ -5,6 +5,10 @@
 
 # 2B model weights
 2B/models/*.pth
+2B/models/*_losses.csv
+
+# Generated map
+2B/map.html
 
 # General
 __pycache__/
