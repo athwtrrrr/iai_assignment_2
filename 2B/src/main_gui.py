@@ -68,11 +68,11 @@ REAL_SCATS = _load_real_scats()
 # ---------------------------------------------------------------------------
 ROUTE_COLORS = ["red", "blue", "green", "purple", "orange"]
 ROUTE_HEX    = {
-    "red":    "#e74c3c",
-    "blue":   "#2980b9",
-    "green":  "#27ae60",
-    "purple": "#8e44ad",
-    "orange": "#e67e22",
+    "red":    "#ff1900",
+    "blue":   "#56b3f1",
+    "green":  "#00c351",
+    "purple": "#984fb7",
+    "orange": "#ff973c",
 }
 
 MAP_OUTPUT = os.path.join(SCRIPT_DIR, "map.html")
@@ -184,21 +184,44 @@ def generate_map(routes: list, origin: int, destination: int) -> str:
 
     # ── SCATS site markers ────────────────────────────────────────────────
     for nid, (lat, lon, lbl) in REAL_SCATS.items():
+        # Determine marker colour and icon based on origin/destination
         if nid == origin:
-            icon = folium.Icon(color="green",     icon="play",             prefix="fa")
+            bg_color = "#2ecc71"   # green
+            icon_char = "🚦"       # or "🏁" etc.
         elif nid == destination:
-            icon = folium.Icon(color="red",        icon="flag-checkered",  prefix="fa")
+            bg_color = "#e74c3c"   # red
+            icon_char = "🏁"
         else:
-            icon = folium.Icon(color="cadetblue",  icon="map-marker",      prefix="fa")
+            bg_color = "#3498db"   # blue
+            icon_char = "📍"
+        
+        # Create a DivIcon with the SCATS number displayed prominently
+        html = f'''
+        <div style="
+            background-color: {bg_color};
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            line-height: 22px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        ">
+            {nid}
+        </div>
+        '''
         folium.Marker(
             location=[lat, lon],
-            popup   =folium.Popup(
-                f"<div style='font-family:sans-serif'>"
-                f"<b>SCATS {nid}</b><br>{lbl}</div>",
-                max_width=220,
+            popup=folium.Popup(
+                f"<b>SCATS {nid}</b><br>{lbl}",
+                max_width=220
             ),
             tooltip=f"SCATS {nid} — {lbl}",
-            icon=icon,
+            icon=folium.DivIcon(html=html, icon_size=(28, 28), icon_anchor=(14, 14))
         ).add_to(fmap)
 
     # ── Legend ────────────────────────────────────────────────────────────
@@ -403,11 +426,19 @@ class TBRGSWindow(QMainWindow):
             location=[-37.858, 145.070], zoom_start=13, tiles="OpenStreetMap"
         )
         for nid, (lat, lon, lbl) in REAL_SCATS.items():
+            html = f'''
+            <div style="background-color:#3498db; color:white; font-weight:bold; font-size:12px;
+                        font-family:Arial; text-align:center; line-height:22px; width:28px;
+                        height:28px; border-radius:50%; border:2px solid white;
+                        box-shadow:0 1px 3px rgba(0,0,0,0.3);">
+                {nid}
+            </div>
+            '''
             folium.Marker(
                 location=[lat, lon],
-                popup   =folium.Popup(f"<b>SCATS {nid}</b><br>{lbl}", max_width=220),
-                tooltip =f"SCATS {nid}",
-                icon    =folium.Icon(color="cadetblue", icon="map-marker", prefix="fa"),
+                popup=folium.Popup(f"<b>SCATS {nid}</b><br>{lbl}", max_width=220),
+                tooltip=f"SCATS {nid} — {lbl}",
+                icon=folium.DivIcon(html=html, icon_size=(28, 28), icon_anchor=(14, 14))
             ).add_to(fmap)
 
         fmap.get_root().html.add_child(folium.Element("""
