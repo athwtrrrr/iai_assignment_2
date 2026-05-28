@@ -169,7 +169,7 @@ def train_model(X_train, y_train, X_val, y_val, site_id):
 def evaluate(X_test, y_test, scaler, site_id):
     model_path = f"models/lstm_site_{site_id}.pth"
     model = LSTMModel()
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path, map_location="cpu"))
     model.eval()
 
     with torch.no_grad():
@@ -209,7 +209,7 @@ def plot_predictions(site_id, test_site, preds_real, y_test_real, lags=LAGS, sav
     plt.figure(figsize=(12, 5))
     plt.plot(results_df["timestamp"], results_df["actual"], label="Actual", alpha=0.7, linewidth=1)
     plt.plot(results_df["timestamp"], results_df["predicted"], label="Predicted", alpha=0.7, linewidth=1)
-    plt.title(f"Site {site_id} – Actual vs Predicted Traffic Flow (Test Set)")
+    plt.title(f"Site {site_id} – Actual vs Predicted Traffic Flow (LSTM, Test Set)")    
     plt.xlabel("Time")
     plt.ylabel("Flow (vehicles/15min)")
     plt.legend()
@@ -261,7 +261,7 @@ if __name__ == "__main__":
     train, val, test = load_data()
     train, val, test, scaler = normalise(train, val, test)
 
-    site_ids = train["scats_id"].unique()
+    site_ids = sorted(train["scats_id"].unique())
     print(f"\nFound {len(site_ids)} unique sites. Training one LSTM per site.\n")
 
     all_metrics = []
