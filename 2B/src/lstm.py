@@ -7,6 +7,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import matplotlib.pyplot as plt
+from config import cfg
 
 # ─────────────────────────────────────────────
 # CONFIG
@@ -14,13 +15,13 @@ import matplotlib.pyplot as plt
 TRAIN_PATH  = "data/train.csv"
 VAL_PATH    = "data/val.csv"
 TEST_PATH   = "data/test.csv"
-LAGS        = 12          # 12 x 15min = 3 hours 
-HIDDEN_SIZE = 64
-NUM_LAYERS  = 2
-BATCH_SIZE  = 32
-EPOCHS      = 100
-PATIENCE    = 10
-LR          = 0.001
+LAGS        = cfg["models"]["lags"]
+BATCH_SIZE  = cfg["models"]["batch_size"]
+EPOCHS      = cfg["models"]["epochs"]
+PATIENCE    = cfg["models"]["patience"]
+LR          = cfg["models"]["learning_rate"]
+HIDDEN_SIZE = cfg["models"]["lstm"]["hidden_size"]   
+NUM_LAYERS  = cfg["models"]["lstm"]["num_layers"]
 
 # ─────────────────────────────────────────────
 # STEP 1: Load data
@@ -56,24 +57,36 @@ def normalise(train, val, test):
 # ─────────────────────────────────────────────
 def build_sequences(df, lags=LAGS):
     X, y = [], []
-    for site_id, site_row in df.groupby("scats_id"):
-        site_row = site_row.sort_values("timestamp")
-        flow = site_row["flow_scaled"].values
+
+    for site_id, site_rows in df.groupby("scats_id"):
+        site_rows = site_rows.sort_values("timestamp")
+        flow   = site_rows["flow_scaled"].values
+        hour   = site_rows["hour_of_day"].values / 24.0     
+        dow    = site_rows["day_of_week"].values / 7.0     
+        weekend = site_rows["is_weekend"].values.astype(float)
+
         for i in range(lags, len(flow)):
-            X.append(flow[i - lags:i])
+            features = np.column_stack([
+                flow[i-lags:i],
+                hour[i-lags:i],
+                dow[i-lags:i],
+                weekend[i-lags:i]
+            ])
+            X.append(features)
             y.append(flow[i])
+
     if len(X) == 0:
-        return np.empty((0, lags, 1)), np.empty(0)
-    X = np.array(X)
-    y = np.array(y)
-    X = X.reshape(X.shape[0], X.shape[1], 1)
+        return np.empty((0, lags, 4), dtype=np.float32), np.empty(0, dtype=np.float32)
+
+    X = np.array(X, dtype=np.float32)
+    y = np.array(y, dtype=np.float32)
     return X, y
 
 # ─────────────────────────────────────────────
 # STEP 4: LSTM Model definition
 # ─────────────────────────────────────────────
 class LSTMModel(nn.Module):
-    def __init__(self, input_size=1, hidden_size=HIDDEN_SIZE, num_layers=NUM_LAYERS):
+    def __init__(self, input_size=4, hidden_size=HIDDEN_SIZE, num_layers=NUM_LAYERS):
         super(LSTMModel, self).__init__()
         self.lstm = nn.LSTM(
             input_size  = input_size,
@@ -302,7 +315,7 @@ if __name__ == "__main__":
     # Save summary CSV
     if all_metrics:
         results_df = pd.DataFrame(all_metrics)
-        results_df.to_csv("models/per_site_summary.csv", index=False)
+        results_df.to_csv("models/lstm_per_site_summary.csv", index=False)
         print("\n\n===== Per‑site model summary =====")
         print(results_df.describe())
     else:

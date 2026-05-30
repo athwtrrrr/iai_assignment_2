@@ -32,6 +32,8 @@ from PyQt5.QtCore import QUrl, QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QFont
 
 from routing import get_top_k_routes, build_traffic_graph
+from config import cfg
+
 
 # ---------------------------------------------------------------------------
 # Load SCATS site metadata
@@ -40,8 +42,10 @@ _SITE_INFO_PATH = os.path.join(SCRIPT_DIR, "data", "site_info.csv")
 
 # Coordinate correction: AGD84 → WGS84 (applied in search_graph.py too,
 # but we duplicate it here so the map markers match the routing graph).
-LAT_OFFSET = -0.0011
-LON_OFFSET =  0.0010
+LAT_OFFSET = cfg["graph"]["lat_offset"]  
+LON_OFFSET = cfg["graph"]["lon_offset"]   
+
+
 
 def _load_real_scats() -> dict:
     """
@@ -66,14 +70,10 @@ REAL_SCATS = _load_real_scats()
 # ---------------------------------------------------------------------------
 # Route colour palette
 # ---------------------------------------------------------------------------
-ROUTE_COLORS = ["red", "blue", "green", "purple", "orange"]
-ROUTE_HEX    = {
-    "red":    "#ff1900",
-    "blue":   "#56b3f1",
-    "green":  "#00c351",
-    "purple": "#984fb7",
-    "orange": "#ff973c",
-}
+ROUTE_COLORS = cfg["gui"]["route_colors"] 
+ROUTE_HEX    = cfg["gui"]["route_hex"]  
+
+DEFAULT_ZOOM = cfg["gui"]["default_zoom"]
 
 MAP_OUTPUT = os.path.join(SCRIPT_DIR, "map.html")
 
@@ -99,7 +99,7 @@ class RoutingWorker(QThread):
     def run(self) -> None:
         try:
             routes = get_top_k_routes(
-                self.origin, self.destination, self.model_name, k=5
+                self.origin, self.destination, self.model_name
             )
             if not routes:
                 self.error.emit(
@@ -136,7 +136,7 @@ def generate_map(routes: list, origin: int, destination: int) -> str:
     else:
         center = (-37.858, 145.070)   # Boroondara fallback
 
-    fmap = folium.Map(location=list(center), zoom_start=14, tiles="OpenStreetMap")
+    fmap = folium.Map(location=list(center), zoom_start=DEFAULT_ZOOM, tiles=cfg["gui"]["map_tiles"])
 
     # ── Route polylines ───────────────────────────────────────────────────
     for rank, (path, tt) in enumerate(routes):
@@ -258,7 +258,7 @@ class TBRGSWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("TBRGS — Traffic-Based Route Guidance System")
-        self.setMinimumSize(1380, 820)
+        self.setMinimumSize(cfg["gui"]["window_width"], cfg["gui"]["window_height"])
         self._worker: RoutingWorker | None = None
         self._build_ui()
         self._show_default_map()
@@ -280,7 +280,7 @@ class TBRGSWindow(QMainWindow):
     def _build_left_panel(self) -> QFrame:
         panel = QFrame()
         panel.setObjectName("leftPanel")
-        panel.setFixedWidth(370)
+        panel.setFixedWidth(cfg["gui"]["left_panel_width"])
 
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(22, 26, 22, 18)

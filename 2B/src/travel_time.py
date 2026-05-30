@@ -1,12 +1,13 @@
 from math import sqrt
+from config import cfg
 
 # ─────────────────────────────────────────────
 # Constants  (from Traffic Flow to Travel Time v1.0 PDF)
 # ─────────────────────────────────────────────
-SPEED_LIMIT        = 60      # km/h — speed cap when flow is low
-CAPACITY_FLOW      = 1500    # veh/hr — flow at capacity (turning point)
-CAPACITY_SPEED     = 32      # km/h  — speed at capacity
-INTERSECTION_DELAY = 30      # seconds added per intersection
+SPEED_LIMIT        = cfg["travel_time"]["speed_limit_kmh"]
+CAPACITY_FLOW      = cfg["travel_time"]["capacity_flow_vph"]
+CAPACITY_SPEED     = cfg["travel_time"]["capacity_speed_kmh"]
+INTERSECTION_DELAY = cfg["travel_time"]["intersection_delay_sec"]
 
 # Quadratic coefficients for: flow = A·speed² + B·speed
 A = -CAPACITY_FLOW / (CAPACITY_SPEED ** 2)   # ≈ -1.46484375

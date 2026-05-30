@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from config import cfg
 
 
 # ─────────────────────────────────────────────
@@ -107,8 +108,8 @@ def enrich_and_clean(df_long, site_info):
 # ─────────────────────────────────────────────
 # STEP 5: Train / test split
 # ─────────────────────────────────────────────
-TRAIN_END = "2006-10-22"   # Oct 1-21  = train (21 days, 70%)
-VAL_END   = "2006-10-27"   # Oct 22-26 = val   (5 days,  16%)
+TRAIN_END = cfg["data"]["train_end_date"]   # Oct 1-21  = train (21 days, 70%)
+VAL_END   = cfg["data"]["val_end_date"]   # Oct 22-26 = val   (5 days,  16%)
                             # Oct 27-31 = test  (5 days,  16%)
 
 def split_data(df, timestamp_col="timestamp"):

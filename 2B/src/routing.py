@@ -27,12 +27,16 @@ from search       import yen_k_shortest, a_star
 from lstm        import LSTMModel
 from gru         import GRUModel
 from transformer import TransformerModel
-from travel_time import travel_time   # single source of truth
+from travel_time import travel_time   
+from config import cfg
 
 DATA_DIR   = os.path.join(SCRIPT_DIR, "data")
 MODELS_DIR = os.path.join(SCRIPT_DIR, "models")
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+FALLBACK_FLOW = cfg["routing"]["fallback_flow"]
+MAX_NEIGHBOURS = cfg["routing"]["max_neighbours"]
 
 _graph_cache   = None
 _model_cache:  Dict[str, torch.nn.Module] = {}
@@ -49,12 +53,12 @@ _MODEL_CLASSES = {
 # Graph
 # ===========================================================================
 
-def build_traffic_graph(max_neighbours: int = 3) -> TrafficGraph:
+def build_traffic_graph() -> TrafficGraph:
     global _graph_cache
     if _graph_cache is None:
         _graph_cache = build_graph(
             os.path.join(DATA_DIR, "site_info.csv"),
-            max_neighbours=max_neighbours,
+            max_neighbours=MAX_NEIGHBOURS,
         )
         print(f"[Routing] {_graph_cache}")
     return _graph_cache
@@ -74,7 +78,7 @@ def build_travel_time_adj(
     for from_id, neighbours in graph.adj.items():
         if from_id in removed_nodes:
             continue
-        flow   = flow_map.get(from_id, 300.0)
+        flow   = flow_map.get(from_id, FALLBACK_FLOW)
         bucket = []
         for to_id, dist_km in neighbours:
             if to_id in removed_nodes or (from_id, to_id) in removed_edges:
@@ -131,7 +135,7 @@ def _load_model(model_name: str, site_id: int) -> Optional[torch.nn.Module]:
     return model
 
 
-def predict_flows(model_name: str, lags: int = 12) -> Dict[int, float]:
+def predict_flows(model_name: str, lags = cfg["models"]["lags"]) -> Dict[int, float]:
     """
     Predict next-step flow (veh/15 min) for every SCATS site.
     Falls back to 300 veh/15 min when the per-site model is missing.
@@ -154,7 +158,7 @@ def predict_flows(model_name: str, lags: int = 12) -> Dict[int, float]:
             .tail(lags)
         )
         if len(site_hist) < lags:
-            flow_map[sid] = 300.0
+            flow_map[sid] = FALLBACK_FLOW
             continue
 
         raw    = site_hist["flow_15min"].values.reshape(-1, 1).astype("float32")
@@ -162,7 +166,7 @@ def predict_flows(model_name: str, lags: int = 12) -> Dict[int, float]:
 
         model = _load_model(model_name.lower(), sid)
         if model is None:
-            flow_map[sid] = 300.0
+            flow_map[sid] = FALLBACK_FLOW
             continue
 
         x = torch.tensor(scaled, dtype=torch.float32).unsqueeze(0).to(DEVICE)
@@ -181,7 +185,7 @@ def get_top_k_routes(
     origin:      int,
     destination: int,
     model_name:  str,
-    k:           int = 5,
+    k: int = cfg["routing"]["k_paths"],
 ) -> List[Tuple[List[int], float]]:
     """
     Find top-k routes by travel time between two SCATS sites.

@@ -8,6 +8,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import matplotlib.pyplot as plt
+from config import cfg
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CONFIG
@@ -17,18 +18,19 @@ VAL_PATH   = "data/val.csv"
 TEST_PATH  = "data/test.csv"
 
 # Sequence / training hyper-parameters (match lstm.py / gru.py for fair comparison)
-LAGS       = 12      # 12 × 15 min = 3-hour lookback
-BATCH_SIZE = 32
-EPOCHS     = 100
-PATIENCE   = 10
-LR         = 0.001
+LAGS        = cfg["models"]["lags"]
+BATCH_SIZE  = cfg["models"]["batch_size"]
+EPOCHS      = cfg["models"]["epochs"]
+PATIENCE    = cfg["models"]["patience"]
+LR          = cfg["models"]["learning_rate"]
+
 
 # Transformer-specific hyper-parameters
-D_MODEL    = 64      # must be divisible by NHEAD
-NHEAD      = 4       # 64 / 4 = 16 per head — works fine
-NUM_LAYERS = 2       # TransformerEncoder depth
-DIM_FF     = 128     # feedforward layer width inside each encoder block
-DROPOUT    = 0.1     # applied in pos-encoding, encoder layers, and output head
+D_MODEL    = cfg["models"]["transformer"]["d_model"]
+NHEAD      = cfg["models"]["transformer"]["nhead"]
+NUM_LAYERS = cfg["models"]["transformer"]["num_layers"]
+DIM_FF     = cfg["models"]["transformer"]["dim_feedforward"]
+DROPOUT    = cfg["models"]["transformer"]["dropout"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -73,32 +75,30 @@ def normalise(train, val, test):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_sequences(df, lags=LAGS):
-    """
-    Create supervised (X, y) pairs for one site's subset DataFrame.
-    Rows must be sorted by timestamp before calling this function.
-
-    Returns
-    -------
-    X : np.ndarray  shape (n_samples, lags, 1)   ← (batch, seq, features)
-    y : np.ndarray  shape (n_samples,)
-    """
     X, y = [], []
 
     for site_id, site_rows in df.groupby("scats_id"):
         site_rows = site_rows.sort_values("timestamp")
-        flow = site_rows["flow_scaled"].values
+        flow   = site_rows["flow_scaled"].values
+        hour   = site_rows["hour_of_day"].values / 24.0     
+        dow    = site_rows["day_of_week"].values / 7.0     
+        weekend = site_rows["is_weekend"].values.astype(float)
 
         for i in range(lags, len(flow)):
-            X.append(flow[i - lags : i])
+            features = np.column_stack([
+                flow[i-lags:i],
+                hour[i-lags:i],
+                dow[i-lags:i],
+                weekend[i-lags:i]
+            ])
+            X.append(features)
             y.append(flow[i])
 
     if len(X) == 0:
-        return np.empty((0, lags, 1), dtype=np.float32), np.empty(0, dtype=np.float32)
+        return np.empty((0, lags, 4), dtype=np.float32), np.empty(0, dtype=np.float32)
 
     X = np.array(X, dtype=np.float32)
     y = np.array(y, dtype=np.float32)
-    X = X.reshape(X.shape[0], X.shape[1], 1)   # (N, lags, 1)
-    print(f"X shape: {X.shape}  |  y shape: {y.shape}")
     return X, y
 
 
@@ -158,7 +158,7 @@ class TransformerModel(nn.Module):
 
     def __init__(
         self,
-        input_size: int   = 1,
+        input_size: int   = 4,
         d_model:    int   = D_MODEL,
         nhead:      int   = NHEAD,
         num_layers: int   = NUM_LAYERS,

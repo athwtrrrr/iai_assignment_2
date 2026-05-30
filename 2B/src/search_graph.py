@@ -17,11 +17,12 @@ Melbourne intersections on the map.
 import math
 import pandas as pd
 from typing import Dict, List, Optional, Tuple
+from config import cfg
 
 
 # Approximate AGD84 → WGS84 correction for the Boroondara / Victoria area
-LAT_OFFSET = -0.0011   # shift ~120 m south
-LON_OFFSET =  0.0010   # shift  ~90 m east
+LAT_OFFSET = cfg["graph"]["lat_offset"]   # shift ~120 m south
+LON_OFFSET = cfg["graph"]["lon_offset"]   # shift  ~90 m east
 
 
 # ===========================================================================
