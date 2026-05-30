@@ -1,0 +1,65 @@
+# config.yaml – TBRGS default configuration
+
+data:
+  raw_xls: "data/raw/Scats_Data_October_2006.xls"
+  output_dir: "data"
+  site_info: "data/site_info.csv"
+  train_csv: "data/train.csv"
+  val_csv: "data/val.csv"
+  test_csv: "data/test.csv"
+  train_end_date: "2006-10-22"   # train: before this date
+  val_end_date: "2006-10-27"     # val: from train_end to this date
+
+models:
+  base_dir: "models"
+  plot_dir: "plots"
+  default_model: "lstm"          # used in GUI if none selected
+  lags: 12                       # lookback windows (15‑min steps)
+  batch_size: 32
+  epochs: 100
+  patience: 10
+  learning_rate: 0.001
+
+  lstm:
+    hidden_size: 64
+    num_layers: 2
+
+  gru:
+    hidden_size: 64
+    num_layers: 2
+
+  transformer:
+    d_model: 64
+    nhead: 4
+    num_layers: 2
+    dim_feedforward: 128
+    dropout: 0.1
+
+routing:
+  max_neighbours: 3              # graph connectivity (k‑nearest)
+  k_paths: 5                     # number of routes for Yen
+  fallback_flow: 300.0           # veh/15min when model missing
+
+travel_time:
+  speed_limit_kmh: 60
+  capacity_flow_vph: 1500
+  capacity_speed_kmh: 32
+  intersection_delay_sec: 30
+
+graph:
+  lat_offset: -0.0011            # AGD84 → WGS84 correction
+  lon_offset: 0.0010
+
+gui:
+  default_zoom: 14
+  window_width: 1380
+  window_height: 820
+  left_panel_width: 370
+  route_colors: ["red", "blue", "green", "purple", "orange"]
+  route_hex:
+    red: "#ff1900"
+    blue: "#56b3f1"
+    green: "#00c351"
+    purple: "#984fb7"
+    orange: "#ff973c"
+  map_tiles: "OpenStreetMap"
