@@ -27,10 +27,10 @@ import pandas as pd
 WORKSPACE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, WORKSPACE)
 
-from travel_time  import flow_to_speed, travel_time, SPEED_LIMIT, CAPACITY_SPEED
+from travel_time import travel_time, flow_to_speed, SPEED_LIMIT, CAPACITY_SPEED
 from search_graph import TrafficGraph, haversine, build_graph
 from search       import dijkstra, a_star, yen_k_shortest
-from routing      import calculate_travel_time, build_travel_time_adj
+from routing import build_travel_time_adj
 
 _TOL = 1e-5
 
@@ -123,17 +123,11 @@ def test_04_flow_at_capacity_equals_capacity_speed():
 
 
 def test_05_travel_time_monotone_increasing_with_flow():
-    """
-    Higher flow → lower speed → longer travel time.
-    Verified across the full range: free-flow through over-capacity.
-    """
-    flows = [0, 200, 351, 600, 1000, 1500]
-    times = [travel_time(f, 1.0) for f in flows]
+    # flows in veh/15min (ML prediction unit)
+    flows_15min = [0, 50, 87.75, 150, 250, 375]   # corresponds to 0,200,351,600,1000,1500 veh/hr
+    times = [travel_time(f, 1.0) for f in flows_15min]
     for i in range(1, len(times)):
-        assert times[i] >= times[i - 1], (
-            f"Monotone violated: t({flows[i]}) = {times[i]:.4f} "
-            f"< t({flows[i-1]}) = {times[i-1]:.4f}"
-        )
+        assert times[i] >= times[i-1]
 
 
 # ===========================================================================
@@ -221,7 +215,7 @@ def test_14_calculate_travel_time_free_flow_1km():
         flow_hr = 0 × 4 = 0  →  speed = 60 km/h
         time    = (1/60) × 60 + 0.5 = 1.5 min
     """
-    tt = calculate_travel_time(0.0, 1.0)
+    tt = travel_time(0.0, 1.0)
     assert abs(tt - 1.5) < _TOL, f"Expected 1.5 min, got {tt:.4f}"
 
 

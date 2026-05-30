@@ -12,23 +12,8 @@ Responsibilities
    using the parabolic speed model from the assignment PDF.
 4. Materialise a travel-time-weighted adjacency dict for the search.
 5. Run Yen's K=5 to return the top routes.
-
-Travel-time formula (Traffic Flow to Travel Time Conversion v1.0)
-------------------------------------------------------------------
-    flow = -1.4648375 * speed^2 + 93.75 * speed
-
-  Constants
-    A = -1.4648375   (quadratic coefficient)
-    B =  93.75       (linear coefficient)
-    flow_threshold = 351 veh/hr
-    speed_limit    =  60 km/h
-    intersection_delay = 0.5 min per node
-
-  For flow <= 351  -> speed = 60 km/h (capped at speed limit)
-  For flow >  351  -> higher (green) root: s = (-B - sqrt(B^2+4*A*flow)) / (2*A)
-  travel_time (min) = (distance_km / speed) * 60 + 0.5
 """
-import os, sys, math
+import os, sys
 import pandas as pd
 import numpy as np
 import torch
@@ -42,15 +27,10 @@ from search       import yen_k_shortest, a_star
 from lstm        import LSTMModel
 from gru         import GRUModel
 from transformer import TransformerModel
+from travel_time import travel_time   # single source of truth
 
 DATA_DIR   = os.path.join(SCRIPT_DIR, "data")
 MODELS_DIR = os.path.join(SCRIPT_DIR, "models")
-
-_A                  = -1.4648375
-_B                  =  93.75
-_FLOW_THRESHOLD     =  351.0
-_SPEED_LIMIT        =   60.0
-_INTERSECTION_DELAY =    0.5   # minutes
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -64,31 +44,6 @@ _MODEL_CLASSES = {
     "gru":         GRUModel,
     "transformer": TransformerModel,
 }
-
-
-# ===========================================================================
-# Travel-time
-# ===========================================================================
-
-def calculate_travel_time(flow_15min: float, distance_km: float) -> float:
-    """
-    Estimate travel time (minutes) for one road segment.
-
-    flow_15min is converted to veh/hr (*4) before applying the parabolic
-    speed model specified in the assignment PDF.
-    """
-    flow_hr = flow_15min * 4.0
-
-    if flow_hr <= _FLOW_THRESHOLD:
-        speed = _SPEED_LIMIT
-    else:
-        disc  = _B ** 2 + 4.0 * _A * flow_hr
-        disc  = max(disc, 0.0)
-        speed = (-_B - math.sqrt(disc)) / (2.0 * _A)
-        speed = max(speed, 1.0)
-
-    return (distance_km / speed) * 60.0 + _INTERSECTION_DELAY
-
 
 # ===========================================================================
 # Graph
@@ -124,7 +79,7 @@ def build_travel_time_adj(
         for to_id, dist_km in neighbours:
             if to_id in removed_nodes or (from_id, to_id) in removed_edges:
                 continue
-            bucket.append((to_id, calculate_travel_time(flow, dist_km)))
+            bucket.append((to_id, travel_time(flow, dist_km)))
         weighted[from_id] = bucket
 
     return weighted

@@ -69,41 +69,20 @@ def flow_to_speed(flow_per_hour: float) -> float:
 # ─────────────────────────────────────────────
 # Travel time for one road segment
 # ─────────────────────────────────────────────
-def travel_time(flow_per_hour: float, distance_km: float) -> float:
+def travel_time(flow_15min: float, distance_km: float) -> float:
     """
-    Estimate travel time (seconds) for one road segment.
+    Estimate travel time (minutes) for one road segment.
 
     Parameters
     ----------
-    flow_per_hour : float — traffic flow in vehicles per hour
-                            (convert from veh/15min by multiplying × 4)
-    distance_km   : float — segment length in kilometres
+    flow_15min : float — predicted traffic flow in vehicles per 15 minutes
+    distance_km : float — segment length in kilometres
 
     Returns
     -------
-    float — travel time in seconds (driving time + intersection delay)
+    float — travel time in minutes (driving time + intersection delay)
     """
-    speed    = flow_to_speed(flow_per_hour)
-    time_hrs = distance_km / speed
-    time_sec = time_hrs * 3600
-    return time_sec + INTERSECTION_DELAY
+    flow_hr = flow_15min * 4.0
+    speed = flow_to_speed(flow_hr)
+    return (distance_km / speed) * 60.0 + (INTERSECTION_DELAY / 60.0)
 
-
-# ─────────────────────────────────────────────
-# Sanity check
-# ─────────────────────────────────────────────
-if __name__ == "__main__":
-    print("Flow → Speed verification")
-    print(f"  Flow=   0 veh/hr : {flow_to_speed(0):.2f} km/h  (expect 60.00)")
-    print(f"  Flow= 351 veh/hr : {flow_to_speed(351):.2f} km/h  (expect ~60.00)")
-    print(f"  Flow= 800 veh/hr : {flow_to_speed(800):.2f} km/h  (expect ~53.86)")
-    print(f"  Flow=1500 veh/hr : {flow_to_speed(1500):.2f} km/h  (expect 32.00)")
-    print(f"  Flow=2000 veh/hr : {flow_to_speed(2000):.2f} km/h  (expect 32.00 — over capacity)")
-
-    print("\nTravel time for 1 km segment")
-    print(f"  flow=   0 : {travel_time(0, 1):.1f}s  (expect ~90.0s)")
-    print(f"  flow= 500 : {travel_time(500, 1):.1f}s  (expect ~92.0s)")
-    print(f"  flow=1500 : {travel_time(1500, 1):.1f}s  (expect ~142.5s)")
-
-    print("\n⚠  Note: flow_per_hour = predicted_flow_15min × 4")
-    print(f"  Example: 200 veh/15min → {200*4} veh/hr → {flow_to_speed(200*4):.1f} km/h")
